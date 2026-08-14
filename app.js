@@ -25,6 +25,47 @@ function selectedItem() {
   return items.find((item) => item.id === selectedId);
 }
 
+function linkifyHtml(html) {
+  const container = document.createElement("div");
+  container.innerHTML = html;
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (walker.nextNode()) {
+    if (!walker.currentNode.parentElement.closest("a")) textNodes.push(walker.currentNode);
+  }
+
+  const urlPattern = /(?:https?:\/\/|www\.|[a-z0-9](?:[a-z0-9-]*\.)+[a-z]{2,})[^\s<]*/gi;
+  textNodes.forEach((textNode) => {
+    const text = textNode.nodeValue;
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+    let changed = false;
+
+    for (const match of text.matchAll(urlPattern)) {
+      if (match.index > 0 && text[match.index - 1] === "@") continue;
+      let url = match[0];
+      const trailing = url.match(/[),.;!?]+$/)?.[0] ?? "";
+      if (trailing) url = url.slice(0, -trailing.length);
+      if (!url) continue;
+      changed = true;
+      fragment.append(text.slice(lastIndex, match.index));
+      const link = document.createElement("a");
+      link.href = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = url;
+      fragment.append(link, trailing);
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (changed) {
+      fragment.append(text.slice(lastIndex));
+      textNode.replaceWith(fragment);
+    }
+  });
+  return container.innerHTML;
+}
+
 function showStatus(message, isError = false) {
   clearTimeout(statusTimer);
   saveStatus.textContent = message;
@@ -53,7 +94,7 @@ function renderItems() {
 function renderEditor() {
   const item = selectedItem();
   editor.contentEditable = String(Boolean(item));
-  editor.innerHTML = item?.notes_html ?? "";
+  editor.innerHTML = linkifyHtml(item?.notes_html ?? "");
 }
 
 async function loadItems() {
@@ -152,7 +193,7 @@ function enqueueSave(snapshot) {
 function scheduleCurrentNoteSave(delay = 400) {
   if (!selectedItem()) return Promise.resolve(true);
   clearTimeout(saveDebounceTimer);
-  pendingSave = { itemId: selectedId, notesHtml: editor.innerHTML };
+  pendingSave = { itemId: selectedId, notesHtml: linkifyHtml(editor.innerHTML) };
   if (delay === 0) return flushPendingSave();
   saveDebounceTimer = setTimeout(flushPendingSave, delay);
   return Promise.resolve(true);
@@ -169,8 +210,32 @@ function flushPendingSave() {
 function insertTimestamp() {
   editor.focus();
   const now = new Date();
-  const stamp = `[${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}]`;
-  document.execCommand("insertText", false, stamp);
+  const hour = now.getHours() % 12 || 12;
+  const period = now.getHours() < 12 ? "am" : "pm";
+  const stamp = `${now.getMonth() + 1}-${now.getDate()}-${now.getFullYear()} ${hour}:${String(now.getMinutes()).padStart(2, "0")} ${period}`;
+  const hasContent = editor.textContent.trim() !== "";
+  const makeLine = (content) => {
+    const line = document.createElement("div");
+    if (content) line.append(content);
+    else line.append(document.createElement("br"));
+    return line;
+  };
+  const timestamp = document.createElement("strong");
+  timestamp.textContent = stamp;
+  const cursorLine = makeLine();
+
+  if (hasContent) {
+    editor.append(makeLine(), makeLine(), makeLine(timestamp), cursorLine);
+  } else {
+    editor.replaceChildren(timestamp, cursorLine);
+  }
+
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.setStart(cursorLine, 0);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
   scheduleCurrentNoteSave(0);
 }
 
@@ -211,6 +276,22 @@ document.querySelectorAll("[data-command]").forEach((button) => {
 
 editor.addEventListener("input", () => {
   scheduleCurrentNoteSave();
+});
+
+editor.addEventListener("blur", () => {
+  if (!selectedItem()) return;
+  const linkedHtml = linkifyHtml(editor.innerHTML);
+  if (linkedHtml !== editor.innerHTML) {
+    editor.innerHTML = linkedHtml;
+    scheduleCurrentNoteSave(0);
+  }
+});
+
+editor.addEventListener("click", (event) => {
+  const link = event.target.closest("a");
+  if (!link) return;
+  event.preventDefault();
+  window.open(link.href, "_blank", "noopener,noreferrer");
 });
 
 db.auth.onAuthStateChange((_event, session) => {

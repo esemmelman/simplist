@@ -115,8 +115,8 @@ h1, h2 {
 }
 
 .item-actions button {
-  padding: 3px 10px;
-  font-size: 12px;
+  padding: 5px 12px;
+  font-size: 16px;
 }
 
 .item-actions .danger { margin-left: auto; }
@@ -181,6 +181,7 @@ h1, h2 {
 .notes-editor:focus { border-color: #0878c9; }
 .notes-editor:empty::before { color: #888; content: attr(data-placeholder); }
 .notes-editor p { margin: 0 0 1em; }
+.notes-editor a { color: #0563c1; cursor: pointer; text-decoration: underline; }
 
 @media (max-width: 680px) {
   .app-shell {
