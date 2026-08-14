@@ -20,6 +20,7 @@ button { font: inherit; }
 .auth-gate[hidden] { display: none; }
 .auth-dialog { display: grid; width: min(360px, calc(100% - 32px)); gap: 7px; padding: 24px; border: 1px solid #888; background: #fff; box-shadow: 0 8px 30px rgba(0, 0, 0, .15); }
 .auth-dialog h1 { margin: 0; font-size: 20px; font-weight: 600; }
+.auth-version { color: #555; font-size: 14px; font-weight: 600; }
 .auth-dialog p { margin: 0 0 8px; color: #555; }
 .auth-dialog label { margin-top: 4px; font-size: 13px; }
 .auth-dialog input { padding: 8px; border: 1px solid #888; font: inherit; font-size: 18px; }
@@ -144,7 +145,7 @@ h1, h2 {
 
 .session-tools { display: flex; align-items: center; gap: 10px; }
 #sign-out { padding: 2px 7px; font-size: 11px; }
-.app-version { position: fixed; right: 8px; bottom: 5px; color: #777; font-size: 11px; }
+.app-version { color: #444; font-size: 13px; font-weight: 600; white-space: nowrap; }
 
 .toolbar {
   display: flex;

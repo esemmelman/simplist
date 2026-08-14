@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.2.1";
+const APP_VERSION = "1.2.2";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -24,7 +24,7 @@ let saveQueue = Promise.resolve(true);
 let currentUser = null;
 let resolveItemDialog = null;
 
-document.querySelector("#app-version").textContent = `v${APP_VERSION}`;
+document.querySelector("#app-version").textContent = `Version ${APP_VERSION}`;
 
 function finishItemDialog(value) {
   if (!resolveItemDialog) return;

@@ -1,4 +1,4 @@
--- Simple List v1.2.1
+-- Simple List v1.2.2
 -- Isolated table and policy names prevent collisions with other bnaimitzvah apps.
 
 create table if not exists public.simplist_items_v1 (
