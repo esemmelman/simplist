@@ -1,0 +1,179 @@
+:root {
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  color: #111;
+  background: #f3f3f3;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  background: #f3f3f3;
+}
+
+button { font: inherit; }
+
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(210px, 260px) minmax(360px, 1fr);
+  gap: 40px;
+  width: min(100%, 1120px);
+  min-height: 100vh;
+  margin: 0;
+  padding: 18px 22px;
+}
+
+.items-panel, .notes-panel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 26px;
+  margin-bottom: 7px;
+}
+
+h1, h2 {
+  margin: 0 0 0 4px;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.icon-button {
+  width: 25px;
+  height: 25px;
+  padding: 0 0 2px;
+  border: 1px solid #999;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.item-list {
+  height: calc(100vh - 95px);
+  min-height: 300px;
+  overflow: auto;
+  border: 1px solid #8d8d8d;
+  background: #fff;
+  outline: none;
+}
+
+.item-row {
+  width: 100%;
+  padding: 2px 4px 3px;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: #111;
+  font-weight: 600;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.item-row:hover { background: #e6f2fb; }
+
+.item-row.selected {
+  background: #0878c9;
+  color: #fff;
+}
+
+.item-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.item-actions button, .toolbar button {
+  border: 1px solid #aaa;
+  border-radius: 3px;
+  background: linear-gradient(#fff, #e9e9e9);
+  color: #111;
+  cursor: pointer;
+}
+
+.item-actions button {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.item-actions .danger { margin-left: auto; }
+
+.notes-heading-row { margin-bottom: 0; }
+
+.save-status {
+  color: #666;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.save-status.visible { opacity: 1; }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 34px;
+  padding: 4px;
+  border: 1px solid #888;
+  border-bottom: 0;
+  background: #ededed;
+}
+
+.toolbar button {
+  min-width: 28px;
+  height: 25px;
+  padding: 1px 7px;
+  font-size: 12px;
+}
+
+.toolbar button:hover, .icon-button:hover { background: #e2f0fa; }
+.toolbar button:active, .icon-button:active { background: #cbe4f6; }
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  background: #aaa;
+}
+
+.notes-editor {
+  height: calc(100vh - 85px);
+  min-height: 300px;
+  overflow: auto;
+  padding: 5px 10px;
+  border: 1px solid #888;
+  background: #fff;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.35;
+  outline: none;
+  white-space: normal;
+}
+
+.notes-editor:focus { border-color: #0878c9; }
+.notes-editor:empty::before { color: #888; content: attr(data-placeholder); }
+.notes-editor p { margin: 0 0 1em; }
+
+@media (max-width: 680px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    padding: 12px;
+  }
+
+  .item-list { height: 180px; min-height: 180px; }
+  .notes-editor { height: 55vh; min-height: 300px; }
+  .toolbar { flex-wrap: wrap; }
+}

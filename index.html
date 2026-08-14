@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f3f3f3">
+  <title>Simple List</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="items-panel" aria-labelledby="items-heading">
+      <div class="panel-heading">
+        <h1 id="items-heading">Items</h1>
+        <button id="add-item" class="icon-button" type="button" aria-label="Add item" title="Add item">+</button>
+      </div>
+
+      <div id="item-list" class="item-list" role="listbox" aria-label="Items"></div>
+
+      <div class="item-actions">
+        <button id="rename-item" type="button">Rename</button>
+        <button id="delete-item" class="danger" type="button">Delete</button>
+      </div>
+    </section>
+
+    <section class="notes-panel" aria-labelledby="notes-heading">
+      <div class="panel-heading notes-heading-row">
+        <h2 id="notes-heading">Notes</h2>
+        <span id="save-status" class="save-status" aria-live="polite">Saved</span>
+      </div>
+
+      <div id="toolbar" class="toolbar" role="toolbar" aria-label="Text formatting">
+        <button type="button" data-command="bold" aria-label="Bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
+        <button type="button" data-command="italic" aria-label="Italic" title="Italic (Ctrl+I)"><em>I</em></button>
+        <button type="button" data-command="underline" aria-label="Underline" title="Underline (Ctrl+U)"><u>U</u></button>
+        <span class="toolbar-divider" aria-hidden="true"></span>
+        <button type="button" data-command="insertUnorderedList" aria-label="Bullet list" title="Bullet list">&#8226; List</button>
+        <button type="button" data-command="insertOrderedList" aria-label="Numbered list" title="Numbered list">1. List</button>
+        <span class="toolbar-divider" aria-hidden="true"></span>
+        <button id="add-timestamp" type="button" aria-label="Insert timestamp" title="Insert current date and time">Date / time</button>
+      </div>
+
+      <div
+        id="notes-editor"
+        class="notes-editor"
+        contenteditable="true"
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Notes"
+        data-placeholder="Write a note…"
+      ></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
