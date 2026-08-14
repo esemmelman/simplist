@@ -24,6 +24,18 @@
     </form>
   </div>
 
+  <dialog id="item-dialog" class="item-dialog">
+    <form id="item-dialog-form">
+      <h2 id="item-dialog-heading">Item name</h2>
+      <label for="item-dialog-input">Item name</label>
+      <input id="item-dialog-input" type="text" maxlength="250" required>
+      <div class="dialog-actions">
+        <button id="item-dialog-cancel" type="button">Cancel</button>
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
   <main class="app-shell">
     <section class="items-panel" aria-labelledby="items-heading">
       <div class="panel-heading">
@@ -71,7 +83,7 @@
     </section>
   </main>
 
-  <span id="app-version" class="app-version">v1.1.0</span>
+  <span id="app-version" class="app-version">v1.2.0</span>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.55.0/dist/umd/supabase.min.js"></script>
   <script src="app.js"></script>

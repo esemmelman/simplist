@@ -22,11 +22,21 @@ button { font: inherit; }
 .auth-dialog h1 { margin: 0; font-size: 20px; font-weight: 600; }
 .auth-dialog p { margin: 0 0 8px; color: #555; }
 .auth-dialog label { margin-top: 4px; font-size: 13px; }
-.auth-dialog input { padding: 7px; border: 1px solid #888; font: inherit; }
+.auth-dialog input { padding: 8px; border: 1px solid #888; font: inherit; font-size: 18px; }
 .auth-dialog input:focus { border-color: #0878c9; outline: 1px solid #0878c9; }
 .auth-dialog .auth-message { min-height: 18px; margin: 3px 0 0; color: #a10f0f; font-size: 12px; }
 .auth-actions { display: flex; gap: 7px; }
 .auth-actions button, #sign-out { padding: 4px 10px; border: 1px solid #999; border-radius: 3px; background: linear-gradient(#fff, #e9e9e9); cursor: pointer; }
+
+.item-dialog { width: min(420px, calc(100% - 32px)); padding: 0; border: 1px solid #777; box-shadow: 0 8px 30px rgba(0, 0, 0, .22); }
+.item-dialog::backdrop { background: rgba(0, 0, 0, .28); }
+.item-dialog form { display: grid; gap: 9px; padding: 20px; }
+.item-dialog h2 { margin: 0 0 3px; font-size: 19px; font-weight: 600; }
+.item-dialog label { font-size: 14px; }
+.item-dialog input { width: 100%; padding: 9px; border: 1px solid #888; font: inherit; font-size: 18px; }
+.item-dialog input:focus { border-color: #0878c9; outline: 1px solid #0878c9; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 5px; }
+.dialog-actions button { padding: 6px 13px; border: 1px solid #999; border-radius: 3px; background: linear-gradient(#fff, #e9e9e9); font-size: 15px; cursor: pointer; }
 
 .app-shell {
   display: grid;

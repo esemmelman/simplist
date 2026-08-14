@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -10,6 +10,10 @@ const authMessage = document.querySelector("#auth-message");
 const itemList = document.querySelector("#item-list");
 const editor = document.querySelector("#notes-editor");
 const saveStatus = document.querySelector("#save-status");
+const itemDialog = document.querySelector("#item-dialog");
+const itemDialogForm = document.querySelector("#item-dialog-form");
+const itemDialogHeading = document.querySelector("#item-dialog-heading");
+const itemDialogInput = document.querySelector("#item-dialog-input");
 
 let items = [];
 let selectedId = null;
@@ -18,8 +22,47 @@ let statusTimer;
 let pendingSave = null;
 let saveQueue = Promise.resolve(true);
 let currentUser = null;
+let resolveItemDialog = null;
 
 document.querySelector("#app-version").textContent = `v${APP_VERSION}`;
+
+function finishItemDialog(value) {
+  if (!resolveItemDialog) return;
+  const resolve = resolveItemDialog;
+  resolveItemDialog = null;
+  if (itemDialog.open) itemDialog.close();
+  resolve(value);
+}
+
+function requestItemTitle(heading, value = "") {
+  itemDialogHeading.textContent = heading;
+  itemDialogInput.value = value;
+  itemDialog.showModal();
+  requestAnimationFrame(() => {
+    itemDialogInput.focus();
+    itemDialogInput.select();
+  });
+  return new Promise((resolve) => {
+    resolveItemDialog = resolve;
+  });
+}
+
+itemDialogForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const title = itemDialogInput.value.trim();
+  if (!title) {
+    itemDialogInput.setCustomValidity("Enter an item name.");
+    itemDialogInput.reportValidity();
+    return;
+  }
+  finishItemDialog(title);
+});
+itemDialogInput.addEventListener("input", () => itemDialogInput.setCustomValidity(""));
+document.querySelector("#item-dialog-cancel").addEventListener("click", () => finishItemDialog(null));
+itemDialog.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  finishItemDialog(null);
+});
 
 function selectedItem() {
   return items.find((item) => item.id === selectedId);
@@ -120,11 +163,11 @@ function selectItem(id) {
 
 async function addItem() {
   if (!(await flushPendingSave())) return;
-  const title = window.prompt("Item name:");
-  if (!title?.trim()) return;
+  const title = await requestItemTitle("Add item");
+  if (!title) return;
   const { data, error } = await db
     .from(TABLE_NAME)
-    .insert({ title: title.trim(), user_id: currentUser.id })
+    .insert({ title, user_id: currentUser.id })
     .select("id, title, notes_html, created_at, updated_at")
     .single();
   if (error) return showStatus(error.message, true);
@@ -140,11 +183,11 @@ async function renameItem(id = selectedId) {
   if (!(await flushPendingSave())) return;
   const item = items.find((entry) => entry.id === id);
   if (!item) return;
-  const title = window.prompt("Rename item:", item.title);
-  if (!title?.trim()) return;
-  const { error } = await db.from(TABLE_NAME).update({ title: title.trim(), updated_at: new Date().toISOString() }).eq("id", id);
+  const title = await requestItemTitle("Rename item", item.title);
+  if (!title) return;
+  const { error } = await db.from(TABLE_NAME).update({ title, updated_at: new Date().toISOString() }).eq("id", id);
   if (error) return showStatus(error.message, true);
-  item.title = title.trim();
+  item.title = title;
   renderItems();
   showStatus("Saved");
 }
