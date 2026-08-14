@@ -8,6 +8,22 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div id="auth-gate" class="auth-gate">
+    <form id="auth-form" class="auth-dialog">
+      <h1>Simple List</h1>
+      <p>Sign in to open your list.</p>
+      <label for="auth-email">Email</label>
+      <input id="auth-email" type="email" autocomplete="username" required>
+      <label for="auth-password">Password</label>
+      <input id="auth-password" type="password" autocomplete="current-password" required minlength="6">
+      <p id="auth-message" class="auth-message" aria-live="polite"></p>
+      <div class="auth-actions">
+        <button type="submit">Sign in</button>
+        <button id="sign-up" type="button">Create account</button>
+      </div>
+    </form>
+  </div>
+
   <main class="app-shell">
     <section class="items-panel" aria-labelledby="items-heading">
       <div class="panel-heading">
@@ -26,7 +42,10 @@
     <section class="notes-panel" aria-labelledby="notes-heading">
       <div class="panel-heading notes-heading-row">
         <h2 id="notes-heading">Notes</h2>
-        <span id="save-status" class="save-status" aria-live="polite">Saved</span>
+        <div class="session-tools">
+          <span id="save-status" class="save-status" aria-live="polite">Saved</span>
+          <button id="sign-out" type="button">Sign out</button>
+        </div>
       </div>
 
       <div id="toolbar" class="toolbar" role="toolbar" aria-label="Text formatting">
@@ -52,6 +71,9 @@
     </section>
   </main>
 
+  <span id="app-version" class="app-version">v1.1.0</span>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.55.0/dist/umd/supabase.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
