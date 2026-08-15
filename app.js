@@ -148,7 +148,6 @@ async function loadItems() {
     .order("title", { ascending: true });
   if (error) return showStatus(error.message, true);
   items = data;
-  if (!items.some((item) => item.id === selectedId)) selectedId = items[0]?.id ?? null;
   renderItems();
   renderEditor();
   showStatus("Saved");

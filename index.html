@@ -40,16 +40,15 @@
   <main class="app-shell">
     <section class="items-panel" aria-labelledby="items-heading">
       <div class="panel-heading">
-        <h1 id="items-heading">Items</h1>
+        <h1 id="items-heading" class="visually-hidden">Items</h1>
         <button id="add-item" class="icon-button" type="button" aria-label="Add item" title="Add item">+</button>
+        <div class="item-actions">
+          <button id="rename-item" type="button">Rename</button>
+          <button id="delete-item" class="danger" type="button">Delete</button>
+        </div>
       </div>
 
       <div id="item-list" class="item-list" role="listbox" aria-label="Items"></div>
-
-      <div class="item-actions">
-        <button id="rename-item" type="button">Rename</button>
-        <button id="delete-item" class="danger" type="button">Delete</button>
-      </div>
     </section>
 
     <section class="notes-panel" aria-labelledby="notes-heading">
