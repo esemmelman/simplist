@@ -203,6 +203,12 @@ h1, h2 {
 .notes-editor p { margin: 0 0 1em; }
 .notes-editor a { color: #0563c1; cursor: pointer; text-decoration: underline; }
 
+.clipboard-copy-helper {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+}
+
 @media (max-width: 680px) {
   .app-shell {
     grid-template-columns: 1fr;

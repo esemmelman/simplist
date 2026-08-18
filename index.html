@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f3f3f3">
   <title>Simple List</title>
-  <link rel="stylesheet" href="styles.css?v=1.2.2">
+  <link rel="stylesheet" href="styles.css?v=1.2.3">
 </head>
 <body>
   <div id="auth-gate" class="auth-gate">
@@ -37,6 +37,20 @@
     </form>
   </dialog>
 
+  <dialog id="url-dialog" class="item-dialog">
+    <form id="url-dialog-form">
+      <h2>Add URL to clipboard</h2>
+      <label for="url-dialog-url">URL</label>
+      <input id="url-dialog-url" type="text" inputmode="url" placeholder="https://example.com" required>
+      <label for="url-dialog-name">Friendly name</label>
+      <input id="url-dialog-name" type="text" maxlength="250" placeholder="Example website" required>
+      <div class="dialog-actions">
+        <button id="url-dialog-cancel" type="button">Cancel</button>
+        <button type="submit">Copy</button>
+      </div>
+    </form>
+  </dialog>
+
   <main class="app-shell">
     <section class="items-panel" aria-labelledby="items-heading">
       <div class="panel-heading">
@@ -56,7 +70,7 @@
         <h2 id="notes-heading">Notes</h2>
         <div class="session-tools">
           <span id="save-status" class="save-status" aria-live="polite">Saved</span>
-          <span id="app-version" class="app-version">Version 1.2.2</span>
+          <span id="app-version" class="app-version">Version 1.2.3</span>
           <button id="sign-out" type="button">Sign out</button>
         </div>
       </div>
@@ -70,6 +84,7 @@
         <button type="button" data-command="insertOrderedList" aria-label="Numbered list" title="Numbered list">1. List</button>
         <span class="toolbar-divider" aria-hidden="true"></span>
         <button id="add-timestamp" type="button" aria-label="Insert timestamp" title="Insert current date and time">Date / time</button>
+        <button id="copy-url" type="button" aria-label="Copy named URL" title="Copy a named URL to paste into Notes">URL</button>
       </div>
 
       <div
@@ -85,6 +100,6 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.55.0/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=1.2.2"></script>
+  <script src="app.js?v=1.2.3"></script>
 </body>
 </html>

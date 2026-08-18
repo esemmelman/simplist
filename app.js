@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.2.2";
+const APP_VERSION = "1.2.3";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -14,6 +14,10 @@ const itemDialog = document.querySelector("#item-dialog");
 const itemDialogForm = document.querySelector("#item-dialog-form");
 const itemDialogHeading = document.querySelector("#item-dialog-heading");
 const itemDialogInput = document.querySelector("#item-dialog-input");
+const urlDialog = document.querySelector("#url-dialog");
+const urlDialogForm = document.querySelector("#url-dialog-form");
+const urlDialogUrl = document.querySelector("#url-dialog-url");
+const urlDialogName = document.querySelector("#url-dialog-name");
 
 let items = [];
 let selectedId = null;
@@ -63,6 +67,83 @@ itemDialog.addEventListener("cancel", (event) => {
   event.preventDefault();
   finishItemDialog(null);
 });
+
+function closeUrlDialog() {
+  if (urlDialog.open) urlDialog.close();
+}
+
+function normalizeUrl(value) {
+  const candidate = /^[a-z][a-z\d+.-]*:\/\//i.test(value) ? value : `https://${value}`;
+  const parsed = new URL(candidate);
+  if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Only web URLs are supported.');
+  return parsed.href;
+}
+
+function fallbackCopyLink(name, url) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.textContent = name;
+  const holder = document.createElement("div");
+  holder.contentEditable = "true";
+  holder.className = "clipboard-copy-helper";
+  holder.append(link);
+  document.body.append(holder);
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(holder);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  const copied = document.execCommand("copy");
+  selection.removeAllRanges();
+  holder.remove();
+  if (!copied) throw new Error("Unable to copy the URL.");
+}
+
+async function copyNamedUrl(name, url) {
+  const escapedName = document.createElement("span");
+  escapedName.textContent = name;
+  const escapedUrl = document.createElement("a");
+  escapedUrl.href = url;
+  const html = `<a href="${escapedUrl.href}" target="_blank" rel="noopener noreferrer">${escapedName.innerHTML}</a>`;
+  const plainText = `${name} (${url})`;
+  if (navigator.clipboard?.write && window.ClipboardItem) {
+    await navigator.clipboard.write([new ClipboardItem({
+      "text/html": new Blob([html], { type: "text/html" }),
+      "text/plain": new Blob([plainText], { type: "text/plain" })
+    })]);
+  } else {
+    fallbackCopyLink(name, url);
+  }
+}
+
+document.querySelector("#copy-url").addEventListener("click", () => {
+  urlDialogForm.reset();
+  urlDialog.showModal();
+  requestAnimationFrame(() => urlDialogUrl.focus());
+});
+document.querySelector("#url-dialog-cancel").addEventListener("click", closeUrlDialog);
+urlDialog.addEventListener("cancel", closeUrlDialog);
+urlDialogForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const name = urlDialogName.value.trim();
+  let url;
+  try {
+    url = normalizeUrl(urlDialogUrl.value.trim());
+  } catch (error) {
+    urlDialogUrl.setCustomValidity(error?.message ?? "Enter a valid URL.");
+    urlDialogUrl.reportValidity();
+    return;
+  }
+  try {
+    await copyNamedUrl(name, url);
+    closeUrlDialog();
+    showStatus("URL copied");
+    editor.focus();
+  } catch (error) {
+    showStatus(error?.message ?? "Unable to copy the URL.", true);
+  }
+});
+urlDialogUrl.addEventListener("input", () => urlDialogUrl.setCustomValidity(""));
 
 function selectedItem() {
   return items.find((item) => item.id === selectedId);
