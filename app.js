@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.2.3";
+const APP_VERSION = "1.2.4";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -18,6 +18,10 @@ const urlDialog = document.querySelector("#url-dialog");
 const urlDialogForm = document.querySelector("#url-dialog-form");
 const urlDialogUrl = document.querySelector("#url-dialog-url");
 const urlDialogName = document.querySelector("#url-dialog-name");
+const speechButton = document.querySelector("#speak-notes");
+const speechStatus = document.querySelector("#speech-status");
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let speechSession = null;
 
 let items = [];
 let selectedId = null;
@@ -216,7 +220,9 @@ function renderItems() {
 }
 
 function renderEditor() {
+  cancelSpeech();
   const item = selectedItem();
+  speechButton.disabled = !item;
   editor.contentEditable = String(Boolean(item));
   editor.innerHTML = linkifyHtml(item?.notes_html ?? "");
 }
@@ -362,6 +368,82 @@ function insertTimestamp() {
   scheduleCurrentNoteSave(0);
 }
 
+function resetSpeech(message = "") {
+  speechSession = null;
+  speechButton.setAttribute("aria-pressed", "false");
+  speechButton.title = "Transcribe speech into Notes";
+  speechStatus.textContent = message;
+}
+
+function cancelSpeech() {
+  const session = speechSession;
+  if (!session) return;
+  resetSpeech();
+  session.recognition.abort();
+}
+
+speechButton.addEventListener("click", () => {
+  if (speechSession) {
+    speechStatus.textContent = "Finishing…";
+    speechSession.recognition.stop();
+    return;
+  }
+  if (!selectedItem()) return;
+  if (!SpeechRecognition) {
+    speechStatus.textContent = "Speech recognition is unavailable in this browser. Try Chrome or Safari.";
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  const session = { recognition, itemId: selectedId, nextResult: 0 };
+  speechSession = session;
+  recognition.continuous = true;
+  recognition.interimResults = false;
+  recognition.lang = navigator.language || document.documentElement.lang || "en-US";
+  speechButton.setAttribute("aria-pressed", "true");
+  speechButton.title = "Stop transcribing";
+  speechStatus.textContent = "Starting microphone…";
+  recognition.onstart = () => {
+    if (speechSession === session) speechStatus.textContent = "Listening… Click Spk to stop.";
+  };
+  recognition.onresult = (event) => {
+    if (speechSession !== session || selectedId !== session.itemId || !selectedItem()) return;
+    for (let i = Math.max(event.resultIndex, session.nextResult); i < event.results.length; i++) {
+      if (!event.results[i].isFinal) continue;
+      session.nextResult = i + 1;
+      const text = event.results[i][0].transcript.trim();
+      if (!text) continue;
+      // Append plain text so dictated words cannot become HTML or replace existing notes.
+      const separator = editor.textContent && !/\s$/.test(editor.textContent) ? " " : "";
+      editor.append(document.createTextNode(separator + text));
+      editor.scrollTop = editor.scrollHeight;
+      scheduleCurrentNoteSave();
+    }
+  };
+  recognition.onerror = (event) => {
+    if (speechSession !== session) return;
+    const messages = {
+      "not-allowed": "Microphone access denied. Allow microphone access and click Spk again.",
+      "service-not-allowed": "Speech recognition is blocked by this browser.",
+      "audio-capture": "No microphone found. Connect a microphone and try again.",
+      "no-speech": "No speech detected. Click Spk to try again.",
+      "network": "Speech recognition could not connect. Check your connection and try again."
+    };
+    resetSpeech(messages[event.error] || "Speech recognition stopped. Click Spk to try again.");
+    recognition.abort();
+  };
+  recognition.onend = () => {
+    if (speechSession === session) resetSpeech("Dictation stopped.");
+  };
+  try {
+    recognition.start();
+  } catch {
+    resetSpeech("Unable to start the microphone. Check microphone access and try again.");
+  }
+});
+
+window.addEventListener("pagehide", cancelSpeech);
+
 async function authenticate(mode) {
   authMessage.textContent = "Working…";
   const credentials = {
@@ -380,6 +462,7 @@ authForm.addEventListener("submit", (event) => {
 });
 document.querySelector("#sign-up").addEventListener("click", () => authenticate("signup"));
 document.querySelector("#sign-out").addEventListener("click", async () => {
+  cancelSpeech();
   const saved = await flushPendingSave();
   if (saved) await db.auth.signOut();
 });

@@ -176,6 +176,10 @@ h1, h2 {
 
 .toolbar button:hover, .icon-button:hover { background: #e2f0fa; }
 .toolbar button:active, .icon-button:active { background: #cbe4f6; }
+.toolbar button[aria-pressed="true"] { background: #a10f0f; color: #fff; border-color: #a10f0f; }
+.toolbar button:disabled { opacity: .5; cursor: default; }
+.speech-status { font-size: 12px; color: #555; }
+.speech-status:not(:empty) { padding: 5px; border: 1px solid #888; border-bottom: 0; background: #fff; }
 
 .toolbar-divider {
   width: 1px;
