@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.2.4";
+const APP_VERSION = "1.2.5";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -413,9 +413,15 @@ speechButton.addEventListener("click", () => {
       session.nextResult = i + 1;
       const text = event.results[i][0].transcript.trim();
       if (!text) continue;
-      // Append plain text so dictated words cannot become HTML or replace existing notes.
-      const separator = editor.textContent && !/\s$/.test(editor.textContent) ? " " : "";
-      editor.append(document.createTextNode(separator + text));
+      // Continue inside the last line instead of appending after its block element.
+      let line = editor;
+      while (line.lastChild?.nodeType === Node.ELEMENT_NODE &&
+        /^(DIV|P|UL|OL|LI|BLOCKQUOTE|H[1-6]|PRE)$/.test(line.lastChild.tagName)) {
+        line = line.lastChild;
+      }
+      if (line.lastChild?.nodeName === "BR") line.lastChild.remove();
+      const separator = line.textContent && !/\s$/.test(line.textContent) ? " " : "";
+      line.append(document.createTextNode(separator + text));
       editor.scrollTop = editor.scrollHeight;
       scheduleCurrentNoteSave();
     }
