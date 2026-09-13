@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.2.5";
+const APP_VERSION = "1.2.6";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -341,7 +341,8 @@ function insertTimestamp() {
   const now = new Date();
   const hour = now.getHours() % 12 || 12;
   const period = now.getHours() < 12 ? "am" : "pm";
-  const stamp = `${now.getMonth() + 1}-${now.getDate()}-${now.getFullYear()} ${hour}:${String(now.getMinutes()).padStart(2, "0")} ${period}`;
+  const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][now.getDay()];
+  const stamp = `${weekday} ${now.getMonth() + 1}-${now.getDate()}-${now.getFullYear()} ${hour}:${String(now.getMinutes()).padStart(2, "0")} ${period}`;
   const hasContent = editor.textContent.trim() !== "";
   const makeLine = (content) => {
     const line = document.createElement("div");
