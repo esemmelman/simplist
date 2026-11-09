@@ -224,3 +224,6 @@ h1, h2 {
   .notes-editor { height: 55vh; min-height: 300px; }
   .toolbar { flex-wrap: wrap; }
 }
+
+.inline-item { display: block; width: 100%; padding: 6px; border: 1px solid #0878c9; font: inherit; }
+.item-list { padding-bottom: 48px; }

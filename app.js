@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.2.6";
+const APP_VERSION = "1.2.7";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -213,7 +213,7 @@ function renderItems() {
       button.textContent = item.title;
       button.setAttribute("role", "option");
       button.setAttribute("aria-selected", String(item.id === selectedId));
-      button.addEventListener("click", () => selectItem(item.id));
+      button.addEventListener("click", () => { selectItem(item.id); copySelectedItem(); });
       button.addEventListener("dblclick", () => renameItem(item.id));
       itemList.append(button);
     });
@@ -247,9 +247,8 @@ function selectItem(id) {
   renderEditor();
 }
 
-async function addItem() {
+async function addItem(title) {
   if (!(await flushPendingSave())) return;
-  const title = await requestItemTitle("Add item");
   if (!title) return;
   const { data, error } = await db
     .from(TABLE_NAME)
@@ -473,7 +472,51 @@ document.querySelector("#sign-out").addEventListener("click", async () => {
   const saved = await flushPendingSave();
   if (saved) await db.auth.signOut();
 });
-document.querySelector("#add-item").addEventListener("click", addItem);
+function beginInlineItem() {
+  if (!currentUser) return;
+  const existing = itemList.querySelector("input");
+  if (existing) return existing.focus();
+  const input = document.createElement("input");
+  input.className = "inline-item";
+  input.maxLength = 250;
+  input.placeholder = "Type an item, then press Enter";
+  input.setAttribute("aria-label", "New item name");
+  let saving = false;
+  const commit = async () => {
+    const title = input.value.trim();
+    if (saving || !title) return;
+    saving = true;
+    input.disabled = true;
+    try { await addItem(title); }
+    finally { saving = false; input.disabled = false; }
+  };
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter") { event.preventDefault(); commit(); }
+    if (event.key === "Escape") { input.remove(); itemList.focus(); }
+  });
+  input.addEventListener("blur", () => {
+    if (input.value.trim()) commit(); else input.remove();
+  });
+  itemList.append(input);
+  input.focus();
+}
+itemList.addEventListener("click", event => {
+  if (event.target === itemList) beginInlineItem();
+});
+itemList.addEventListener("keydown", event => {
+  if (event.target === itemList && event.key === "Enter") beginInlineItem();
+});
+async function copySelectedItem() {
+  const item = selectedItem();
+  if (!item) return;
+  const notes = editor.innerText.trim();
+  try {
+    await navigator.clipboard.writeText(item.title + (notes ? "\n" + notes : ""));
+    showStatus("Item copied");
+  } catch {
+    showStatus("Clipboard access blocked. Allow clipboard access to copy items.", true);
+  }
+}
 document.querySelector("#rename-item").addEventListener("click", () => renameItem());
 document.querySelector("#delete-item").addEventListener("click", deleteItem);
 document.querySelector("#add-timestamp").addEventListener("click", insertTimestamp);
