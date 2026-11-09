@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.2.8";
+const APP_VERSION = "1.2.9";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -22,6 +22,7 @@ const speechButton = document.querySelector("#speak-notes");
 const speechStatus = document.querySelector("#speech-status");
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let speechSession = null;
+let inlineVoiceSession = null;
 
 let items = [];
 let selectedId = null;
@@ -241,6 +242,7 @@ async function loadItems() {
 }
 
 function selectItem(id) {
+  cancelInlineVoice();
   flushPendingSave();
   selectedId = id;
   renderItems();
@@ -262,6 +264,7 @@ async function addItem(title) {
   renderEditor();
   showStatus("Saved");
   itemList.focus();
+  return true;
 }
 
 async function renameItem(id = selectedId) {
@@ -472,41 +475,112 @@ document.querySelector("#sign-out").addEventListener("click", async () => {
   const saved = await flushPendingSave();
   if (saved) await db.auth.signOut();
 });
-function beginInlineItem() {
+function cancelInlineVoice() {
+  const session = inlineVoiceSession;
+  if (!session) return;
+  inlineVoiceSession = null;
+  clearTimeout(session.timer);
+  session.recognition.abort();
+  session.input.placeholder = "Type an item, then press Go";
+}
+
+function startInlineVoice(input, commit) {
+  if (!SpeechRecognition) return;
+  cancelSpeech();
+  cancelInlineVoice();
+  const recognition = new SpeechRecognition();
+  const session = { recognition, input, timer: null };
+  inlineVoiceSession = session;
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = navigator.language || "en-US";
+  const armSave = () => {
+    if (inlineVoiceSession !== session) return;
+    clearTimeout(session.timer);
+    session.timer = setTimeout(() => {
+      if (inlineVoiceSession !== session) return;
+      cancelInlineVoice();
+      if (input.value.trim()) commit();
+      else showStatus("No speech detected. Tap blank space to try again.");
+    }, 3000);
+  };
+  recognition.onstart = () => {
+    if (inlineVoiceSession !== session) return;
+    input.placeholder = "Listening… Tap this item to cancel";
+    showStatus("Listening… Tap this item to cancel");
+    armSave();
+  };
+  recognition.onspeechstart = () => {
+    if (inlineVoiceSession === session) { clearTimeout(session.timer); session.timer = null; }
+  };
+  recognition.onresult = event => {
+    if (inlineVoiceSession !== session) return;
+    input.value = Array.from(event.results, result => result[0].transcript).join(" ").trim();
+    armSave();
+  };
+  recognition.onspeechend = armSave;
+  recognition.onend = () => {
+    if (inlineVoiceSession === session && !session.timer) armSave();
+  };
+  recognition.onerror = event => {
+    if (inlineVoiceSession !== session) return;
+    cancelInlineVoice();
+    showStatus(event.error === "not-allowed" ? "Allow microphone access, or type your item." : "Voice input stopped. Type your item or try again.", true);
+  };
+  try { recognition.start(); }
+  catch { cancelInlineVoice(); showStatus("Voice input unavailable. Type your item.", true); }
+}
+
+function beginInlineItem(useVoice = true) {
   if (!currentUser) return;
   const existing = itemList.querySelector("input");
-  if (existing) return existing.focus();
+  if (existing) {
+    if (inlineVoiceSession) { cancelInlineVoice(); existing.remove(); showStatus("Voice entry canceled"); }
+    else existing.focus();
+    return;
+  }
   const input = document.createElement("input");
   input.className = "inline-item";
   input.enterKeyHint = "go";
   input.maxLength = 250;
-  input.placeholder = "Type an item, then press Enter";
-  input.setAttribute("aria-label", "New item name");
+  input.placeholder = "Type an item, then press Go";
+  input.setAttribute("aria-label", "New item. Tap again to cancel voice entry.");
   let saving = false;
   const commit = async () => {
     const title = input.value.trim();
     if (saving || !title) return;
+    cancelInlineVoice();
     saving = true;
     input.disabled = true;
     try { await addItem(title); }
     finally { saving = false; input.disabled = false; }
   };
+  input.addEventListener("click", () => {
+    if (!inlineVoiceSession || saving) return;
+    cancelInlineVoice();
+    input.remove();
+    showStatus("Voice entry canceled");
+  });
+  input.addEventListener("input", cancelInlineVoice);
   input.addEventListener("keydown", event => {
     if (event.key === "Enter") { event.preventDefault(); commit(); }
-    if (event.key === "Escape") { input.remove(); itemList.focus(); }
+    if (event.key === "Escape") { cancelInlineVoice(); input.remove(); itemList.focus(); }
   });
   input.addEventListener("blur", () => {
+    if (inlineVoiceSession || saving) return;
     if (input.value.trim()) commit(); else input.remove();
   });
   itemList.append(input);
-  input.focus();
+  if (useVoice && SpeechRecognition) startInlineVoice(input, commit);
+  else input.focus();
 }
 itemList.addEventListener("click", event => {
   if (event.target === itemList) beginInlineItem();
 });
 itemList.addEventListener("keydown", event => {
-  if (event.target === itemList && event.key === "Enter") beginInlineItem();
+  if (event.target === itemList && event.key === "Enter") beginInlineItem(false);
 });
+window.addEventListener("pagehide", cancelInlineVoice);
 async function copySelectedItem() {
   const item = selectedItem();
   if (!item) return;
@@ -552,6 +626,7 @@ editor.addEventListener("click", (event) => {
 });
 
 db.auth.onAuthStateChange((_event, session) => {
+  cancelInlineVoice();
   currentUser = session?.user ?? null;
   authGate.hidden = Boolean(currentUser);
   if (currentUser) {
