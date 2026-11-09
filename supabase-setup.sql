@@ -25,3 +25,6 @@ create policy "simplist_items_v1_owner_access"
 
 revoke all on table public.simplist_items_v1 from anon;
 grant select, insert, update, delete on table public.simplist_items_v1 to authenticated;
+
+-- Keep archived items and their notes available for restoration.
+alter table public.simplist_items_v1 add column if not exists archived boolean not null default false;

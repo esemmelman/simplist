@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.2.12";
+const APP_VERSION = "1.2.13";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -26,6 +26,7 @@ let inlineVoiceSession = null;
 
 let items = [];
 let selectedId = null;
+let showArchived = false;
 let saveDebounceTimer;
 let statusTimer;
 let pendingSave = null;
@@ -203,9 +204,20 @@ function showStatus(message, isError = false) {
   if (!isError) statusTimer = setTimeout(() => saveStatus.classList.remove("visible"), 900);
 }
 
+function visibleItems() {
+  return items.filter(item => Boolean(item.archived) === showArchived);
+}
+
 function renderItems() {
   itemList.replaceChildren();
-  [...items]
+  const archive = document.querySelector("#archive-item");
+  archive.textContent = showArchived ? "Restore" : "Archive";
+  archive.disabled = !selectedItem();
+  const toggle = document.querySelector("#show-archived");
+  toggle.textContent = showArchived ? "Active list" : "Archived";
+  toggle.setAttribute("aria-pressed", String(showArchived));
+  itemList.setAttribute("aria-label", showArchived ? "Archived items" : "Items. Click blank space to add an item.");
+  visibleItems()
     .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base", numeric: true }))
     .forEach((item) => {
       const button = document.createElement("button");
@@ -232,7 +244,7 @@ async function loadItems() {
   showStatus("Loading…");
   const { data, error } = await db
     .from(TABLE_NAME)
-    .select("id, title, notes_html, created_at, updated_at")
+    .select("id, title, notes_html, archived, created_at, updated_at")
     .order("title", { ascending: true });
   if (error) return showStatus(error.message, true);
   items = data;
@@ -256,10 +268,11 @@ async function addItem(title) {
   const { data, error } = await db
     .from(TABLE_NAME)
     .insert({ title, user_id: currentUser.id })
-    .select("id, title, notes_html, created_at, updated_at")
+    .select("id, title, notes_html, archived, created_at, updated_at")
     .single();
   if (error) return showStatus(error.message, true);
   items.push(data);
+  showArchived = false;
   selectedId = data.id;
   renderItems();
   renderEditor();
@@ -289,10 +302,33 @@ async function deleteItem() {
   if (error) return showStatus(error.message, true);
   const index = items.findIndex((entry) => entry.id === item.id);
   items.splice(index, 1);
-  selectedId = items[Math.min(index, items.length - 1)]?.id ?? null;
+  selectedId = visibleItems()[0]?.id ?? null;
   renderItems();
   renderEditor();
   showStatus("Saved");
+}
+
+async function archiveSelectedItem() {
+  const item = selectedItem();
+  if (!item || !(await flushPendingSave())) return;
+  const archived = !Boolean(item.archived);
+  const { data, error } = await db.from(TABLE_NAME)
+    .update({ archived, updated_at: new Date().toISOString() })
+    .eq("id", item.id).eq("user_id", currentUser.id).select("id");
+  if (error) return showStatus(error.message, true);
+  if (!data?.length) return showStatus("Item was not updated. Reload the list and try again.", true);
+  item.archived = archived;
+  selectedId = null;
+  renderItems(); renderEditor();
+  showStatus(archived ? "Item archived" : "Item restored");
+}
+
+async function toggleArchiveView() {
+  if (!(await flushPendingSave())) return;
+  cancelInlineVoice();
+  showArchived = !showArchived;
+  selectedId = null;
+  renderItems(); renderEditor();
 }
 
 async function saveNote({ itemId, notesHtml }) {
@@ -542,7 +578,7 @@ function startInlineVoice(input, commit) {
 }
 
 function beginInlineItem(useVoice = true) {
-  if (!currentUser) return;
+  if (!currentUser || showArchived) return;
   const existing = itemList.querySelector("input");
   if (existing) {
     if (inlineVoiceSession) { cancelInlineVoice(); existing.remove(); showStatus("Voice entry canceled"); }
@@ -607,6 +643,9 @@ async function copySelectedItem() {
     showStatus("Clipboard access blocked. Allow clipboard access to copy items.", true);
   }
 }
+document.querySelector("#archive-item").addEventListener("click", archiveSelectedItem);
+document.querySelector("#show-archived").addEventListener("click", toggleArchiveView);
+
 document.querySelector("#rename-item").addEventListener("click", () => renameItem());
 document.querySelector("#delete-item").addEventListener("click", deleteItem);
 document.querySelector("#add-timestamp").addEventListener("click", insertTimestamp);
@@ -643,6 +682,7 @@ editor.addEventListener("click", (event) => {
 db.auth.onAuthStateChange((_event, session) => {
   cancelInlineVoice();
   currentUser = session?.user ?? null;
+  showArchived = false;
   authGate.hidden = Boolean(currentUser);
   if (currentUser) {
     authMessage.textContent = "";

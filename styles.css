@@ -227,3 +227,7 @@ h1, h2 {
 
 .inline-item { display: block; width: 100%; padding: 6px; border: 1px solid #0878c9; font: inherit; }
 .item-list { padding-bottom: 48px; }
+
+.item-actions { flex-wrap: wrap; justify-content: flex-end; }
+.item-actions button:disabled { opacity: .5; cursor: default; }
+#show-archived[aria-pressed="true"] { background: #0878c9; color: white; }

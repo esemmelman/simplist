@@ -6,7 +6,7 @@ const source=fs.readFileSync('app.js','utf8');
 function setup(){
  let recognition,timer,next=0,added=[];
  const input={value:'',remove(){this.removed=true;},setAttribute(){},addEventListener(name,fn){this[name]=fn;},focus(){}};
- const context={inlineVoiceSession:null,currentUser:{id:'u'},SpeechRecognition:class{constructor(){recognition=this;}start(){this.onstart();}abort(){this.aborted=true;}},navigator:{language:'en-US'},cancelSpeech(){},showStatus(){},
+ const context={inlineVoiceSession:null,showArchived:false,currentUser:{id:'u'},SpeechRecognition:class{constructor(){recognition=this;}start(){this.onstart();}abort(){this.aborted=true;}},navigator:{language:'en-US'},cancelSpeech(){},showStatus(){},
  setTimeout(fn,delay){assert.equal(delay,3000);timer={fn,id:++next};return next;},clearTimeout(id){if(timer?.id===id)timer=null;},
  itemList:{querySelector(){return this.input&&!this.input.removed?this.input:null;},append(i){this.input=i;},addEventListener(){},focus(){}},
  document:{createElement(){return input;}},window:{addEventListener(){}},async addItem(title){added.push(title);}};
