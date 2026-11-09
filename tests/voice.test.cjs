@@ -37,3 +37,22 @@ test('silence without speech adds nothing and typing remains available',()=>{
  const app=setup();app.context.beginInlineItem();app.timer.fn();
  assert.equal(app.added.length,0);assert.equal(app.context.inlineVoiceSession,null);
 });
+
+test('Android partial hypotheses replace each other instead of repeating take',()=>{
+ const app=setup();app.context.beginInlineItem();
+ const result=(text,isFinal=false)=>Object.assign([{transcript:text}],{isFinal});
+ assert.equal(app.recognition.continuous,false);
+ app.recognition.onresult({resultIndex:0,results:[result('take')]});
+ app.recognition.onresult({resultIndex:1,results:[result('take'),result('take the')]});
+ app.recognition.onresult({resultIndex:2,results:[result('take'),result('take the'),result('take the trash out')]});
+ assert.equal(app.input.value,'take the trash out');
+ app.recognition.onresult({resultIndex:0,results:[result('Take the trash out',true)]});
+ app.timer.fn();
+ assert.deepEqual(app.added,['Take the trash out']);
+});
+test('final speech is preserved and deliberate repeated words are not removed',()=>{
+ const app=setup();app.context.beginInlineItem();
+ const result=(text,isFinal=false)=>Object.assign([{transcript:text}],{isFinal});
+ app.recognition.onresult({results:[result('very very important',true),result('call'),result('call mom')]});
+ assert.equal(app.input.value,'very very important call mom');
+});

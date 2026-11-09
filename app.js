@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.2.9";
+const APP_VERSION = "1.2.10";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -491,7 +491,8 @@ function startInlineVoice(input, commit) {
   const recognition = new SpeechRecognition();
   const session = { recognition, input, timer: null };
   inlineVoiceSession = session;
-  recognition.continuous = true;
+  // A list item is one utterance; Android continuous mode can repeat partial phrases.
+  recognition.continuous = false;
   recognition.interimResults = true;
   recognition.lang = navigator.language || "en-US";
   const armSave = () => {
@@ -515,7 +516,14 @@ function startInlineVoice(input, commit) {
   };
   recognition.onresult = event => {
     if (inlineVoiceSession !== session) return;
-    input.value = Array.from(event.results, result => result[0].transcript).join(" ").trim();
+    const finalParts = [];
+    let interim = "";
+    for (const result of event.results) {
+      if (result.isFinal) finalParts.push(result[0].transcript.trim());
+      else interim = result[0].transcript.trim();
+    }
+    // Interim entries are revised hypotheses, not additional spoken phrases.
+    input.value = [...finalParts, interim].filter(Boolean).join(" ").trim();
     armSave();
   };
   recognition.onspeechend = armSave;
