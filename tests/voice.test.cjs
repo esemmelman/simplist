@@ -18,7 +18,7 @@ test('voice entry saves once after three seconds of silence and includes interim
  const app=setup();app.context.beginInlineItem();
  app.recognition.onresult({results:[[{transcript:'Call dentist'}]]});
  const old=app.timer;
- app.recognition.onresult({results:[[{transcript:'Call dentist tomorrow'}]]});
+ app.recognition.onresult({results:[[{transcript:'call dentist tomorrow'}]]});
  assert.notEqual(app.timer.id,old.id);assert.equal(app.added.length,0);
  app.timer.fn();await Promise.resolve();
  assert.deepEqual(app.added,['Call dentist tomorrow']);assert.ok(app.recognition.aborted);
@@ -45,7 +45,7 @@ test('Android partial hypotheses replace each other instead of repeating take',(
  app.recognition.onresult({resultIndex:0,results:[result('take')]});
  app.recognition.onresult({resultIndex:1,results:[result('take'),result('take the')]});
  app.recognition.onresult({resultIndex:2,results:[result('take'),result('take the'),result('take the trash out')]});
- assert.equal(app.input.value,'take the trash out');
+ assert.equal(app.input.value,'Take the trash out');
  app.recognition.onresult({resultIndex:0,results:[result('Take the trash out',true)]});
  app.timer.fn();
  assert.deepEqual(app.added,['Take the trash out']);
@@ -54,5 +54,5 @@ test('final speech is preserved and deliberate repeated words are not removed',(
  const app=setup();app.context.beginInlineItem();
  const result=(text,isFinal=false)=>Object.assign([{transcript:text}],{isFinal});
  app.recognition.onresult({results:[result('very very important',true),result('call'),result('call mom')]});
- assert.equal(app.input.value,'very very important call mom');
+ assert.equal(app.input.value,'Very very important call mom');
 });
