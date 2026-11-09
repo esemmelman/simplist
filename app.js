@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.2.13";
+const APP_VERSION = "1.2.14";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -211,10 +211,14 @@ function visibleItems() {
 function renderItems() {
   itemList.replaceChildren();
   const archive = document.querySelector("#archive-item");
-  archive.textContent = showArchived ? "Restore" : "Archive";
+  archive.textContent = showArchived ? "Rst" : "Arc";
+  archive.title = showArchived ? "Restore" : "Archive";
+  archive.setAttribute("aria-label", archive.title);
   archive.disabled = !selectedItem();
   const toggle = document.querySelector("#show-archived");
-  toggle.textContent = showArchived ? "Active list" : "Archived";
+  toggle.textContent = showArchived ? "Act" : "Ard";
+  toggle.title = showArchived ? "Show active list" : "Show archived items";
+  toggle.setAttribute("aria-label", toggle.title);
   toggle.setAttribute("aria-pressed", String(showArchived));
   itemList.setAttribute("aria-label", showArchived ? "Archived items" : "Items. Click blank space to add an item.");
   visibleItems()
