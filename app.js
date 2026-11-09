@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://fgomaujsdblpzxhnnqrg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i";
 const TABLE_NAME = "simplist_items_v1";
-const APP_VERSION = "1.2.10";
+const APP_VERSION = "1.2.11";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const authGate = document.querySelector("#auth-gate");
@@ -239,6 +239,7 @@ async function loadItems() {
   renderItems();
   renderEditor();
   showStatus("Saved");
+  if(window.parent!==window)window.parent.postMessage({type:"simplist:ready"},location.origin);
 }
 
 function selectItem(id) {
@@ -594,7 +595,12 @@ async function copySelectedItem() {
   if (!item) return;
   const notes = editor.innerText.trim();
   try {
-    await navigator.clipboard.writeText(item.title + (notes ? "\n" + notes : ""));
+    const text = item.title + (notes ? "\n" + notes : "");
+    await navigator.clipboard.writeText(text);
+    if (await flushPendingSave()) window.parent.postMessage({type:"simplist:copied",copy:{
+      token:crypto.randomUUID(),id:item.id,userId:currentUser.id,title:item.title,
+      notesHtml:item.notes_html || "",text
+    }},location.origin);
     showStatus("Item copied");
   } catch {
     showStatus("Clipboard access blocked. Allow clipboard access to copy items.", true);
@@ -646,4 +652,33 @@ db.auth.onAuthStateChange((_event, session) => {
     renderItems();
     renderEditor();
   }
+});
+
+// The parent requests removal only after the calendar appointment has saved.
+const pendingListRemovals = new Set();
+window.addEventListener("message", async event => {
+  if (event.origin !== location.origin || event.source !== window.parent || window.parent === window) return;
+  if (event.data?.type !== "dayflow:remove-copied-item") return;
+  const copy = event.data.copy;
+  if (!copy?.token || !copy.id || copy.userId !== currentUser?.id || pendingListRemovals.has(copy.token)) return;
+  pendingListRemovals.add(copy.token);
+  try {
+    if (!(await flushPendingSave())) return;
+    const item = items.find(entry => entry.id === copy.id);
+    if (item && (item.title !== copy.title || (item.notes_html || "") !== copy.notesHtml)) {
+      showStatus("Scheduled item kept in the list because it was edited.");
+      event.source.postMessage({type:"simplist:removed",token:copy.token},event.origin);
+      return;
+    }
+    const {error} = await db.from(TABLE_NAME).delete().eq("id",copy.id).eq("user_id",copy.userId)
+      .eq("title",copy.title).eq("notes_html",copy.notesHtml);
+    if (error) { showStatus("Calendar item saved; list removal will retry when you reopen List.",true); return; }
+    // Refresh so a concurrent edit that prevented deletion is still visible.
+    await loadItems();
+    if (selectedId === copy.id && !items.some(entry => entry.id === copy.id)) {
+      selectedId = null; renderItems(); renderEditor();
+    }
+    event.source.postMessage({type:"simplist:removed",token:copy.token},event.origin);
+  } catch { showStatus("Calendar item saved; list removal will retry when you reopen List.",true); }
+  finally { pendingListRemovals.delete(copy.token); }
 });
